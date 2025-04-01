@@ -54,7 +54,7 @@ class Product:
                 print("Изменение цены отменено")
                 return
 
-        self._price = new_price  # Устанавливаем новую цену
+        self.__price = new_price
 
 
 class Category:
@@ -67,13 +67,19 @@ class Category:
     def __init__(self, name, description, products=None):
         self.name = name
         self.description = description
-        self.__products = products if products else []
+        self.__products = []
+
+        # Проверяем каждый продукт перед добавлением
+        if products:
+            for product in products:
+                self.add_product(product)
 
         Category.category_count += 1
-        Category.product_count += len(self.__products)
 
     def add_product(self, product: Product):
-        """Добавляет продукт в категорию"""
+        """Добавляет продукт в категорию с проверкой типа"""
+        if not isinstance(product, Product):
+            raise TypeError("Можно добавлять только объекты класса Product или его наследников")
         self.__products.append(product)
         Category.product_count += 1
 
@@ -88,7 +94,6 @@ class Category:
         )
 
 
-# Функция для подгрузки данных из JSON и создания объектов
 def load_data_from_json(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         data = json.load(file)  # Чтение и парсинг JSON файла
