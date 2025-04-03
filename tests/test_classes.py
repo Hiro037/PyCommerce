@@ -33,7 +33,7 @@ def test_product_initialization(sample_product):
 
 def test_price_setter_valid(sample_product):
     sample_product.price = 1500.0
-    assert sample_product._price == 1500.0
+    assert sample_product.price == 1500.0
 
 def test_price_setter_negative(sample_product):
     sample_product.price = -100
@@ -78,3 +78,26 @@ def test_category_count():
     initial_count = Category.category_count
     Category("Temp Category", "Test")
     assert Category.category_count == initial_count + 1
+
+
+def test_product_str():
+    product = Product("Ноутбук", "Игровой ноутбук", 100_000, 5)
+    assert str(product) == "Ноутбук, 100000 руб. Остаток: 5 шт."
+
+
+def test_category_str():
+    category = Category("Электроника", "Электроника")
+    product1 = Product("Ноутбук", "Игровой ноутбук", 100_000, 5)
+    product2 = Product("Смартфон", "Флагманский телефон", 80_000, 3)
+    category.add_product(product1)
+    category.add_product(product2)
+
+    assert str(category) == "Электроника, количество продуктов: 8 шт."
+
+
+def test_product_addition():
+    product1 = Product("Ноутбук", "Игровой ноутбук", 100_000, 5)
+    product2 = Product("Смартфон", "Флагманский телефон", 80_000, 3)
+
+    total_price = product1 + product2
+    assert total_price == (100_000 * 5 + 80_000 * 3)

@@ -56,6 +56,13 @@ class Product:
 
         self.__price = new_price
 
+    def __str__(self):
+        return f"{self.name}, {self.__price} руб. Остаток: {self.quantity} шт."
+
+    def __add__(self, other):
+        if isinstance(other, Product):
+            return self.__price * self.quantity + other.__price * other.quantity
+        raise TypeError("Сложение возможно только между объектами класса Product")
 
 class Category:
     name: str
@@ -93,6 +100,30 @@ class Category:
             for product in self.__products
         )
 
+    def __str__(self):
+        total_quantity = sum(product.quantity for product in self.__products)
+        return f"{self.name}, количество продуктов: {total_quantity} шт."
+
+    def __iter__(self):
+        """Делаем объект Category итерируемым."""
+        return CategoryIterator(self)  # Возвращаем итератор
+
+class CategoryIterator:
+    """Класс-итератор для перебора товаров в категории."""
+    def __init__(self, category):
+        self._products = category.products  # Получаем список товаров категории
+        self._index = 0  # Индекс текущего элемента
+
+    def __iter__(self):
+        return self  # Итератор возвращает сам себя
+
+    def __next__(self):
+        if self._index >= len(self._products):
+            raise StopIteration  # Завершаем итерацию, если товары закончились
+
+        product = self._products[self._index]
+        self._index += 1
+        return product
 
 def load_data_from_json(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
