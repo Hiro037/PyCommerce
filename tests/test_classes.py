@@ -1,5 +1,6 @@
 import pytest
-from src.classes import Product, Category
+from src.classes import Product, Smartphone, LawnGrass, Category
+
 
 # Фикстуры для Product
 @pytest.fixture
@@ -101,3 +102,46 @@ def test_product_addition():
 
     total_price = product1 + product2
     assert total_price == (100_000 * 5 + 80_000 * 3)
+
+# Тест: успешное сложение товаров одного класса
+def test_product_add_same_type():
+    phone1 = Smartphone("Phone A", "desc", 100.0, 3, "Snapdragon", "A1", "128GB", "black")
+    phone2 = Smartphone("Phone B", "desc", 200.0, 2, "Snapdragon", "B2", "256GB", "blue")
+
+    total = phone1 + phone2
+    assert total == (100.0 * 3 + 200.0 * 2)
+
+# Тест: ошибка при сложении разных классов
+def test_product_add_different_types():
+    phone = Smartphone("Phone", "desc", 100.0, 3, "Snapdragon", "A1", "128GB", "black")
+    grass = LawnGrass("Grass", "desc", 50.0, 10, "Germany", "7 days", "green")
+
+    with pytest.raises(TypeError):
+        _ = phone + grass
+
+# Тест: добавление только экземпляров Product или наследников
+def test_add_valid_product():
+    category = Category("Gadgets", 'Гаджеты')
+    phone = Smartphone("Phone", "desc", 100.0, 3, "Snapdragon", "A1", "128GB", "black")
+
+    category.add_product(phone)
+    assert len(category._Category__products) == 1
+    assert category._Category__products[0].name == "Phone"
+
+def test_add_invalid_product():
+    category = Category("Gadgets", 'Гаджеты')
+    with pytest.raises(TypeError):
+        category.add_product("not a product")
+
+# Тест: инициализация LawnGrass
+def test_lawngrass_attributes():
+    grass = LawnGrass("Grass", "desc", 60.0, 5, "Netherlands", "10 days", "green")
+    assert grass.country == "Netherlands"
+    assert grass.germination_period == "10 days"
+    assert grass.color == "green"
+
+# Тест: инициализация Smartphone
+def test_smartphone_attributes():
+    phone = Smartphone("Galaxy", "desc", 200.0, 4, "Exynos", "S23", "256GB", "gray")
+    assert phone.model == "S23"
+    assert phone.memory == "256GB"
