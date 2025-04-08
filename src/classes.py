@@ -1,20 +1,63 @@
 import json
+from abc import ABC, abstractmethod
+
+class CreationInfoMixin:
+    def __init__(self, *args, **kwargs):
+        class_name = self.__class__.__name__
+        print(f"{class_name}{args}")
+        super().__init__(*args, **kwargs)
 
 
-class Product:
-    name: str
-    description: str
-    __price: float
-    quantity: int
-    product_list = []
-
-    def __init__(self, name, description, price, quantity):
+class BaseProduct(ABC):
+    @abstractmethod
+    def __init__(self, name: str, description: str, price: float, quantity: int):
         self.name = name
         self.description = description
         self.__price = price
         self.quantity = quantity
 
+    @abstractmethod
+    def __str__(self) -> str:
+        """Возвращает строковое представление продукта"""
+        pass
+
+    @abstractmethod
+    def __add__(self, other):
+        """Описывает логику сложения продуктов"""
+        pass
+
+
+class Product(CreationInfoMixin, BaseProduct):
+    product_list = []
+
+    def __init__(self, name, description, price, quantity):
+        super().__init__(name, description, price, quantity)
+        self._price = price
         Product.product_list.append(self)
+
+    def __str__(self):
+        return f"{self.name}, {self.price} руб. Остаток: {self.quantity} шт."
+
+    def __add__(self, other):
+        if type(self) != type(other):
+            raise TypeError("Нельзя складывать товары разных типов.")
+        return self.price * self.quantity + other.price * other.quantity
+
+    @property
+    def price(self):
+        return self._price
+
+    @price.setter
+    def price(self, new_price):
+        if new_price <= 0:
+            print("Цена не должна быть нулевая или отрицательная")
+            return
+        if new_price < self._price:
+            confirm = input("Вы уверены, что хотите понизить цену? (y/n): ")
+            if confirm.lower() != 'y':
+                print("Снижение цены отменено")
+                return
+        self._price = new_price
 
     @classmethod
     def new_product(cls, product_data):
@@ -36,33 +79,6 @@ class Product:
         cls.product_list.append(new_product)
         return new_product
 
-    @property
-    def price(self):
-        """Геттер для цены"""
-        return self.__price
-
-    @price.setter
-    def price(self, new_price):
-        """Сеттер для цены с проверкой"""
-        if new_price <= 0:
-            print("Цена не должна быть нулевая или отрицательная")
-            return
-
-        if new_price < self.__price:
-            confirm = input(f"Вы уверены, что хотите понизить цену с {self.__price} до {new_price}? (y/n): ")
-            if confirm.lower() != "y":
-                print("Изменение цены отменено")
-                return
-
-        self.__price = new_price
-
-    def __str__(self):
-        return f"{self.name}, {self.__price} руб. Остаток: {self.quantity} шт."
-
-    def __add__(self, other):
-        if type(self) != type(other):
-            raise TypeError("Складывать можно только товары одного типа.")
-        return self.price * self.quantity + other.price * other.quantity
 
 class Category:
     name: str
