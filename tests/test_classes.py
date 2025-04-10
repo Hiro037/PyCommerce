@@ -1,5 +1,5 @@
 import pytest
-from src.classes import Product, Smartphone, LawnGrass, Category, BaseProduct
+from src.classes import Product, Smartphone, LawnGrass, Category, BaseProduct, ZeroQuantityError
 
 
 # Фикстуры для Product
@@ -128,10 +128,13 @@ def test_add_valid_product():
     assert len(category._Category__products) == 1
     assert category._Category__products[0].name == "Phone"
 
-def test_add_invalid_product():
+def test_add_invalid_product(capsys):
     category = Category("Gadgets", 'Гаджеты')
-    with pytest.raises(TypeError):
-        category.add_product("not a product")
+    category.add_product("not a product")
+
+    captured = capsys.readouterr()
+    assert "Можно добавлять только объекты класса Product или его наследников" in captured.out
+    assert "Обработка добавления товара завершена" in captured.out
 
 # Тест: инициализация LawnGrass
 def test_lawngrass_attributes():
@@ -171,3 +174,40 @@ def test_lawngrass_creation_message(capsys):
     assert "LawnGrass" in captured.out
     assert "Газон" in captured.out
     assert "500" in captured.out
+
+def test_product_zero_quantity_raises_value_error():
+    with pytest.raises(ValueError) as exc_info:
+        Product("Товар", "Описание", 100, 0)
+    assert str(exc_info.value) == "Товар с нулевым количеством не может быть добавлен"
+
+def test_average_price_with_products():
+    cat = Category("Электроника", "Гаджеты")
+    cat.add_product(Product("Телефон", "Описание", 10000, 5))
+    cat.add_product(Product("Планшет", "Описание", 20000, 3))
+    assert cat.average_price() == pytest.approx((10000 + 20000) / 2)
+
+def test_average_price_without_products():
+    cat = Category("Пустая", "Категория")
+    assert cat.average_price() == 0
+
+def test_add_product_zero_quantity_triggers_custom_exception(capsys):
+    cat = Category("Сад", "Газон")
+    grass = LawnGrass("Газон", "Для теста", 300, 1, "Россия", "10 дней", "зелёный")  # сначала quantity > 0
+    grass.quantity = 0  # теперь вручную делаем его нулевым
+
+    cat.add_product(grass)
+    captured = capsys.readouterr()
+
+    assert "Товар с нулевым количеством не может быть добавлен в категорию" in captured.out
+    assert "Обработка добавления товара завершена" in captured.out
+
+
+def test_add_valid_product_prints_success(capsys):
+    cat = Category("Смартфоны", "Телефоны")
+    phone = Smartphone("iPhone", "Описание", 120000, 3, "A17", "Pro", "256GB", "серый")
+
+    cat.add_product(phone)
+    captured = capsys.readouterr()
+
+    assert "Товар добавлен" in captured.out
+    assert "Обработка добавления товара завершена" in captured.out
