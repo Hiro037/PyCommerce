@@ -1,5 +1,5 @@
 import pytest
-from src.classes import Product, Smartphone, LawnGrass, Category
+from src.classes import Product, Smartphone, LawnGrass, Category, BaseProduct
 
 
 # Фикстуры для Product
@@ -145,3 +145,29 @@ def test_smartphone_attributes():
     phone = Smartphone("Galaxy", "desc", 200.0, 4, "Exynos", "S23", "256GB", "gray")
     assert phone.model == "S23"
     assert phone.memory == "256GB"
+
+# Тесты для BaseProduct
+def test_base_product_instantiation():
+    with pytest.raises(TypeError) as exc_info:
+        base = BaseProduct()  # Пытаемся создать объект
+    assert "Can't instantiate abstract class BaseProduct" in str(exc_info.value)
+
+#Тесты для CreationInfoMixin
+def test_product_creation_message(capsys):
+    product = Product("Товар", "Описание", 1200, 10)
+    captured = capsys.readouterr()
+    assert "Product('Товар', 'Описание', 1200, 10)" in captured.out
+
+def test_smartphone_creation_message(capsys):
+    phone = Smartphone("Телефон", "Описание", 10000, 5, "Snapdragon", "X100", "256GB", "черный")
+    captured = capsys.readouterr()
+    assert "Smartphone" in captured.out
+    assert "Телефон" in captured.out
+    assert "10000" in captured.out
+
+def test_lawngrass_creation_message(capsys):
+    grass = LawnGrass("Газон", "Для лета", 500, 20, "Россия", "14 дней", "зеленый")
+    captured = capsys.readouterr()
+    assert "LawnGrass" in captured.out
+    assert "Газон" in captured.out
+    assert "500" in captured.out
