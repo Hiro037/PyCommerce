@@ -1,6 +1,12 @@
 import json
 from abc import ABC, abstractmethod
 
+
+class ZeroQuantityError(Exception):
+    """Исключение для товаров с нулевым количеством"""
+    pass
+
+
 class CreationInfoMixin:
     def __init__(self, *args, **kwargs):
         class_name = self.__class__.__name__
@@ -23,7 +29,6 @@ class BaseProduct(ABC):
 
     @abstractmethod
     def __add__(self, other):
-        """Описывает логику сложения продуктов"""
         pass
 
 
@@ -31,6 +36,8 @@ class Product(CreationInfoMixin, BaseProduct):
     product_list = []
 
     def __init__(self, name, description, price, quantity):
+        if quantity == 0:
+            raise ValueError("Товар с нулевым количеством не может быть добавлен")
         super().__init__(name, description, price, quantity)
         self._price = price
         Product.product_list.append(self)
@@ -61,7 +68,6 @@ class Product(CreationInfoMixin, BaseProduct):
 
     @classmethod
     def new_product(cls, product_data):
-        """Создает новый продукт или обновляет существующий."""
         name = product_data["name"]
         description = product_data["description"]
         price = product_data["price"]
@@ -69,12 +75,10 @@ class Product(CreationInfoMixin, BaseProduct):
 
         for product in cls.product_list:
             if product.name == name:
-                # Если товар уже есть, обновляем количество и цену
                 product.quantity += quantity
                 product.price = max(product.price, price)
                 return product
 
-        # Если товара нет, создаем новый объект и добавляем в список
         new_product = cls(name, description, price, quantity)
         cls.product_list.append(new_product)
         return new_product
@@ -92,7 +96,6 @@ class Category:
         self.description = description
         self.__products = []
 
-        # Проверяем каждый продукт перед добавлением
         if products:
             for product in products:
                 self.add_product(product)
@@ -100,15 +103,25 @@ class Category:
         Category.category_count += 1
 
     def add_product(self, product: Product):
-        """Добавляет продукт в категорию с проверкой типа"""
-        if not isinstance(product, Product):
-            raise TypeError("Можно добавлять только объекты класса Product или его наследников")
-        self.__products.append(product)
-        Category.product_count += 1
+        """Добавляет продукт в категорию с проверкой типа и количества"""
+        try:
+            if not isinstance(product, Product):
+                raise TypeError("Можно добавлять только объекты класса Product или его наследников")
+            if product.quantity == 0:
+                raise ZeroQuantityError("Товар с нулевым количеством не может быть добавлен в категорию")
+            self.__products.append(product)
+            Category.product_count += 1
+        except ZeroQuantityError as e:
+            print(e)
+        except TypeError as e:
+            print(e)
+        else:
+            print("Товар добавлен")
+        finally:
+            print("Обработка добавления товара завершена")
 
     @property
     def products(self):
-        """Возвращает список товаров в виде строк"""
         if not self.__products:
             return "В категории нет товаров."
         return "\n".join(
@@ -120,23 +133,30 @@ class Category:
         total_quantity = sum(product.quantity for product in self.__products)
         return f"{self.name}, количество продуктов: {total_quantity} шт."
 
+    def average_price(self):
+        """Возвращает среднюю цену товаров в категории или 0, если товаров нет"""
+        try:
+            total = sum(product.price for product in self.__products)
+            count = len(self.__products)
+            return total / count
+        except ZeroDivisionError:
+            return 0
+
     def __iter__(self):
-        """Делаем объект Category итерируемым."""
-        return CategoryIterator(self)  # Возвращаем итератор
+        return CategoryIterator(self)
+
 
 class CategoryIterator:
-    """Класс-итератор для перебора товаров в категории."""
     def __init__(self, category):
-        self._products = category.products  # Получаем список товаров категории
-        self._index = 0  # Индекс текущего элемента
+        self._products = category.products
+        self._index = 0
 
     def __iter__(self):
-        return self  # Итератор возвращает сам себя
+        return self
 
     def __next__(self):
         if self._index >= len(self._products):
-            raise StopIteration  # Завершаем итерацию, если товары закончились
-
+            raise StopIteration
         product = self._products[self._index]
         self._index += 1
         return product
@@ -161,7 +181,7 @@ class LawnGrass(Product):
 
 def load_data_from_json(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
-        data = json.load(file)  # Чтение и парсинг JSON файла
+        data = json.load(file)
 
     categories = []
 
@@ -174,3 +194,4 @@ def load_data_from_json(file_path):
         categories.append(category)
 
     return categories
+
